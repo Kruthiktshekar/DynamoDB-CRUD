@@ -1,0 +1,120 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: kruthiktshekar
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: practice-app
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  architecture: x86_64
+
+functions:
+  AddUserLambda:
+    name: addUserLambda
+    handler: DDbCrudOperationV3/createUser.handler
+    role: !GetAtt UserRole.Arn
+    events:
+      - http: 
+          path: create-user
+          method: post
+          cors: true
+
+  GetUserLambda: 
+    name: getUserLambda
+    handler: DDbCrudOperationV3/getUser.handler
+    role: !GetAtt UserRole.Arn
+    events: 
+      - http: 
+          path: get-user
+          method: get
+          cors: true
+  UpdateUserLambda: 
+    name: updateUserLambda
+    handler: DDbCrudOperationV3/updateUser.handler
+    role: !GetAtt UserRole.Arn
+    events: 
+      - http: 
+          path: update-user
+          method: put
+          cors: true
+  
+  DeleteUserLambda: 
+    name: deleteUserLambda
+    handler: DDbCrudOperationV3/deleteUser.handler
+    role: !GetAtt UserRole.Arn
+    events: 
+      - http: 
+          path: delete-user
+          method: delete
+          cors: true
+  ScanUserLambda: 
+    name: scanUserLambda
+    handler: DDbCrudOperationV3/scanUser.handler
+    role: !GetAtt UserRole.Arn
+    events: 
+      - http: 
+          path: scan-user
+          method: get
+          cors: true
+
+     
+
+resources:
+  Resources:
+    UserTableDynamoDb2: 
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: UserTable2
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: name
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+          
+    UserRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: UserDbRole2
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement: 
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+              Action: 
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: UserDbPolicy2
+            PolicyDocument: 
+              Version: "2012-10-17"
+              Statement:   
+                - Effect: "Allow"
+                  Action: 
+                    - "dynamodb:PutItem"
+                    - "dynamodb:GetItem"
+                    - "dynamodb:UpdateItem"
+                    - "dynamodb:DeleteItem"
+                    - "dynamodb:Scan"
+                    
+                  Resource: !GetAtt UserTableDynamoDb2.Arn
+          - PolicyName: LogPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action: 
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: "*" 
+
+          
